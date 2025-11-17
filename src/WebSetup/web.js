@@ -25,7 +25,8 @@ webApp.use(
     origin: [
       "http://localhost:5173",
       "https://mahajang214.github.io",
-      "https://mahajang214.github.io/auraMind_frontend"
+      "https://mahajang214.github.io/auraMind_frontend",
+      "https://auramind-backend.onrender.com"
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
