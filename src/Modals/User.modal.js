@@ -46,7 +46,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         sparse: true,   // allows multiple nulls
         unique: true,     // works only when value exists
-        default: ""
+        default: null
     }
 }, { timestamps: true });
 
