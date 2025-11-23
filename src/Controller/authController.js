@@ -39,6 +39,7 @@ const googleLogin = async (req, res) => {
         firstName: payload.given_name,
         lastName: payload.family_name,
         profilePicture: payload.picture,
+        WhatsAppNumber: ""
       });
     } else {
       // Optionally update changed fields (non-destructive)
