@@ -9,6 +9,7 @@ const connectDB = async () => {
             connectTimeoutMS: 30000, // 30 seconds
             socketTimeoutMS: 45000,  // 45 seconds
             // You may add other options here based on requirements
+            autoIndex: false,
         });
         if (connection) {
 
