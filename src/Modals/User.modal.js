@@ -44,9 +44,8 @@ const userSchema = new mongoose.Schema({
     },
     WhatsAppNumber: {
         type: String,
-        default: null,
-        select: false,
-        unique: true
+        sparse: true,   // allows multiple nulls
+        unique: true     // works only when value exists
     }
 }, { timestamps: true });
 
