@@ -125,6 +125,52 @@ const updateTrack = async (req, res) => {
   }
 };
 
+const updateTrackWithoutDuration = async (req, res) => {
+  try {
+    const trackId = req.params.id;
+    const userId = req.user.id;
+    const { title, category } = req.body;
+    // Validate input
+    const validCategories = [
+      "Health",
+      "Work",
+      "Learning",
+      "Productivity",
+      "Social",
+      "Financial",
+      "Entertainment",
+      "Other",
+    ];
+    if (category && !validCategories.includes(category)) {
+      return res.status(400).json({ message: "Invalid category" });
+    }
+
+    //  Use _id for MongoDB
+    const track = await TrackModal.findOne({ _id: trackId, ownerId: userId });
+    if (!track) {
+      return res
+        .status(404)
+        .json({ message: "Track not found or unauthorized" });
+    }
+
+    // Update title if provided
+    if (title) track.title = title;
+    if (category) track.category = category;
+
+    await track.save();
+
+    return res.status(200).json({
+      message: "Track updated successfully",
+      data: track,
+    });
+  } catch (error) {
+    console.error("Error updating track:", error);
+    return res.status(500).json({
+      message: "Something went wrong during track update",
+      error: error.message,
+    });
+  }
+};
 
 // Delete a track
 const deleteTrack = async (req, res) => {
@@ -710,5 +756,6 @@ module.exports = {
   deleteTracks,
   updateIkigai,
   getIkigai,
-  updateStreak
+  updateStreak,
+  updateTrackWithoutDuration
 };

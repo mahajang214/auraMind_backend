@@ -36,8 +36,8 @@ const googleLogin = async (req, res) => {
       user = await UserModal.create({
         email: payload.email,
         googleId: payload.sub,
-        firstName: payload.given_name,
-        lastName: payload.family_name,
+        firstName: payload.given_name || "",
+        lastName: payload.family_name || "",
         profilePicture: payload.picture,
       });
     } else {
