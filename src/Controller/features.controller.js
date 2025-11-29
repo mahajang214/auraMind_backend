@@ -12,10 +12,11 @@ const updateReports = require("./utils/updateReports.js");
 const MonthlyReportModel = require("../Modals/monthlyReport.modal.js");
 const YearlyReportModel = require("../Modals/yearlyReport.modal.js");
 const IkigaiModal = require("../Modals/ikigai.modal.js");
+const FiveTwentyFiveModal = require("../Modals/fiveTwentyFive.modal.js");
 
 const addNewTrack = async (req, res) => {
   try {
-    const { title, category, duration } = req.body;
+    const { title, category, duration, max_duration } = req.body;
     const userId = req.user.id;
     const validCategories = [
       "Health",
@@ -30,10 +31,28 @@ const addNewTrack = async (req, res) => {
     if (!validCategories.includes(category)) {
       return res.status(400).json({ message: "Invalid category" });
     }
+    if (max_duration) {
+      if (
+        typeof max_duration.hr !== "number" ||
+        typeof max_duration.min !== "number" ||
+        typeof max_duration.sec !== "number"
+      ) {
+        return res.status(400).json({ message: "Invalid max_duration format" });
+      }
+    }
+    if (
+      !duration ||
+      typeof duration.hr !== "number" ||
+      typeof duration.min !== "number" ||
+      typeof duration.sec !== "number"
+    ) {
+      return res.status(400).json({ message: "Invalid duration format" });
+    }
     const newTrack = await TrackModal.create({
       title,
       category,
       duration,
+      max_duration,
       ownerId: userId,
     });
     const user = await UserModal.findById(userId);
@@ -129,23 +148,9 @@ const updateTrackWithoutDuration = async (req, res) => {
   try {
     const trackId = req.params.id;
     const userId = req.user.id;
-    const { title, category } = req.body;
-    // Validate input
-    const validCategories = [
-      "Health",
-      "Work",
-      "Learning",
-      "Productivity",
-      "Social",
-      "Financial",
-      "Entertainment",
-      "Other",
-    ];
-    if (category && !validCategories.includes(category)) {
-      return res.status(400).json({ message: "Invalid category" });
-    }
+    const { title, category, max_duration } = req.body;
 
-    //  Use _id for MongoDB
+    // Fetch track
     const track = await TrackModal.findOne({ _id: trackId, ownerId: userId });
     if (!track) {
       return res
@@ -153,9 +158,20 @@ const updateTrackWithoutDuration = async (req, res) => {
         .json({ message: "Track not found or unauthorized" });
     }
 
-    // Update title if provided
+    // Update title
     if (title) track.title = title;
+
+    // Update category
     if (category) track.category = category;
+
+    // Update max_duration only if user provided values
+    if (max_duration) {
+      track.max_duration = {
+        hr: max_duration.hr ?? track.max_duration.hr,
+        min: max_duration.min ?? track.max_duration.min,
+        sec: max_duration.sec ?? track.max_duration.sec,
+      };
+    }
 
     await track.save();
 
@@ -164,13 +180,14 @@ const updateTrackWithoutDuration = async (req, res) => {
       data: track,
     });
   } catch (error) {
-    console.error("Error updating track:", error);
+    console.log("Error updating track:", error.message);
     return res.status(500).json({
       message: "Something went wrong during track update",
       error: error.message,
     });
   }
 };
+
 
 // Delete a track
 const deleteTrack = async (req, res) => {
@@ -400,15 +417,22 @@ const getHabits = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const habitsData = await HabitsModal.find({ ownerId: userId });
+    // findOne instead of find
+    let habitsData = await HabitsModal.findOne({ ownerId: userId });
+
+    // If doesn't exist -> create new one
     if (!habitsData) {
-      return res.status(404).json({ message: "No habits found for user" });
+      habitsData = await HabitsModal.create({
+        ownerId: userId,
+        habits: []
+      });
     }
 
     return res.status(200).json({
       message: "Habits fetched successfully",
       data: habitsData,
     });
+
   } catch (error) {
     console.error("Error fetching habits : ", error);
     return res.status(500).json({
@@ -418,24 +442,32 @@ const getHabits = async (req, res) => {
   }
 };
 
+
 const getPassions = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const passionsData = await passionsModal.findOne({ ownerId: userId });
+    let passionsData = await passionsModal.findOne({ ownerId: userId });
+
+    // If not found → create it
     if (!passionsData) {
-      return res.status(404).json({ message: "No passions found for user" });
+      passionsData = await passionsModal.create({
+        ownerId: userId,
+        passions: []
+      });
+      await passionsData.save();
     }
 
     return res.status(200).json({
       message: "Passions fetched successfully",
-      data: passionsData,
+      data: passionsData
     });
+
   } catch (error) {
-    console.error("Error fetching passions : ", error);
+    console.error("Error fetching passions :", error);
     return res.status(500).json({
       message: "Something went wrong during fetching passions",
-      error: error.message,
+      error: error.message
     });
   }
 };
@@ -671,22 +703,35 @@ const updateIkigai = async (req, res) => {
 const getIkigai = async (req, res) => {
   try {
     const userId = req.user.id;
-    const ikigaiData = await IkigaiModal.findOne({ ownerId: userId });
+
+    let ikigaiData = await IkigaiModal.findOne({ ownerId: userId });
+
+    // If no data → create new one
     if (!ikigaiData) {
-      return res.status(404).json({ message: "Ikigai data not found" });
+      ikigaiData = await IkigaiModal.create({
+        ownerId: userId,
+        data: {
+          passion: [],
+          mission: [],
+          vocation: [],
+          profession: [],
+        },
+      });
     }
+
     return res.status(200).json({
       message: "Ikigai data fetched successfully",
       data: ikigaiData,
     });
+
   } catch (error) {
-    console.error("Error fetching Ikigai data : ", error);
+    console.error("Error fetching Ikigai data:", error);
     return res.status(500).json({
       message: "Something went wrong during fetching Ikigai data",
       error: error.message,
     });
   }
-}
+};
 
 const updateStreak = async (req, res) => {
   try {
@@ -735,6 +780,99 @@ const updateStreak = async (req, res) => {
   }
 };
 
+// helper: convert strings → { goal: "..." }
+const normalize = (arr) =>
+  (arr ?? []).map((g) => ({ goal: g?.trim() || "" }));
+
+
+// ----------------------------------------------------------
+// GET 5/25 DATA
+// ----------------------------------------------------------
+const getFiveTwentyFive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const data = await FiveTwentyFiveModal.findOne({ ownerId: userId }).lean();
+
+    if (!data) {
+      return res.status(200).json({
+        data: { fiveGoals: [], twentyGoals: [] },
+      });
+    }
+
+    return res.status(200).json({
+      data: {
+        fiveGoals: data.fiveGoals.map((g) => g.goal),
+        twentyGoals: data.twentyGoals.map((g) => g.goal),
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "Unable to fetch goals" });
+  }
+};
+
+
+// ----------------------------------------------------------
+// UPDATE / UPSERT
+// ----------------------------------------------------------
+const updateFiveTwentyFive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { fiveGoals, twentyGoals } = req.body;
+
+    const normalizedFive = normalize(fiveGoals);
+    const normalizedTwenty = normalize(twentyGoals);
+
+    if (normalizedFive.length > 5)
+      return res.status(400).json({ message: "Top 5 goals must be 5 max" });
+
+    if (normalizedTwenty.length > 20)
+      return res.status(400).json({ message: "Twenty goals must be 20 max" });
+
+    const data = await FiveTwentyFiveModal.findOneAndUpdate(
+      { ownerId: userId },
+      {
+        fiveGoals: normalizedFive,
+        twentyGoals: normalizedTwenty,
+      },
+      { new: true, upsert: true }
+    );
+
+    return res.status(200).json({
+      message: "5/25 goals updated",
+      data,
+    });
+  } catch (err) {
+    console.log("Error update:", err);
+    return res.status(500).json({ message: "Update failed" });
+  }
+};
+
+
+// ----------------------------------------------------------
+// RESET
+// ----------------------------------------------------------
+const resetFiveTwentyFive = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const data = await FiveTwentyFiveModal.findOneAndUpdate(
+      { ownerId: userId },
+      { $set: { fiveGoals: [], twentyGoals: [] } },
+      { new: true, upsert: true }
+    );
+
+    return res.status(200).json({
+      message: "5/25 reset successful",
+      data,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: "Reset failed" });
+  }
+};
+
+
+
 
 
 
@@ -757,5 +895,8 @@ module.exports = {
   updateIkigai,
   getIkigai,
   updateStreak,
-  updateTrackWithoutDuration
+  updateTrackWithoutDuration,
+  getFiveTwentyFive,
+  updateFiveTwentyFive,
+  resetFiveTwentyFive
 };

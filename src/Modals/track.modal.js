@@ -30,6 +30,14 @@ const trackSchema = new mongoose.Schema(
       default: [{ hr: 0, min: 0, sec: 0, updatedAt: Date.now() }],
       validate: [arr => arr.length <= 2, '{PATH} exceeds the limit of 2']
     },
+    max_duration: {
+      type: {
+        hr: { type: Number, default: 0 },
+        min: { type: Number, default: 30 },
+        sec: { type: Number, default: 0 },
+      },
+      default: { hr: 0, min: 30, sec: 0 },
+    },
     date: {
       type: Date,
       default: Date.now,

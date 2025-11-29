@@ -1,5 +1,5 @@
 const express = require("express")
-const {  allTracks, addNewTrack, updateTrack, deleteTrack, answersCompleted, checkAllTasksCompleted, createHabit, createPassion, getHabits, getPassions, updateWhoAmIQuestions, getEmail, getReports, deleteHabit, deletePassion, deleteTracks, getIkigai, updateIkigai, updateStreaks, updateStreak, updateTrackWithoutDuration } = require("../Controller/features.controller.js");
+const { allTracks, addNewTrack, updateTrack, deleteTrack, answersCompleted, checkAllTasksCompleted, createHabit, createPassion, getHabits, getPassions, updateWhoAmIQuestions, getEmail, getReports, deleteHabit, deletePassion, deleteTracks, getIkigai, updateIkigai, updateStreaks, updateStreak, updateTrackWithoutDuration, getFiveTwentyFive, updateFiveTwentyFive, resetFiveTwentyFive } = require("../Controller/features.controller.js");
 const protection = require("../Middlewares/protection.js");
 
 const router = express.Router();
@@ -32,6 +32,11 @@ router.get("/get-reports", protection, getReports);
 
 router.patch("/update-ikigai", protection, updateIkigai);
 router.get("/get-ikigai", protection, getIkigai);
+
+// 5-25 rules
+router.get("/get-5-25", protection, getFiveTwentyFive);
+router.post("/update-5-25", protection, updateFiveTwentyFive);
+router.patch("/reset-5-25", protection, resetFiveTwentyFive);
 
 
 

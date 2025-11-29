@@ -20,6 +20,8 @@ webApp
   .use(express.json()).use(express.urlencoded({ extended: true })).use(cookieParser());
 
 // Enable CORS
+
+
 webApp.use(
   cors({
     origin: [
